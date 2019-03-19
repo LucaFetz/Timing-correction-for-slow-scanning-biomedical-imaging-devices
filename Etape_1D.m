@@ -97,8 +97,8 @@ GD.run(measurement); % run the algorithm (Note that gam is fixed automatically t
 % LS=CostL2([],measurement);  % Least-Sqaures data term
 % F=LS*H2; %composition of cost and H
 % 
-lambda = 3; %thuner la régul
-R = CostL2(size(measurement)); %regulation term. should it be a Cost? plutôt size(C)
+lambda = 0*3e-5; %thuner la rï¿½gul
+R = CostL2(size(measurement)); %regulation term. should it be a Cost? plutï¿½t size(C)
 F2 = F+lambda*R; %how to integrate the regulation term?
 %regarder evolcost pour voir nb iterations
 
@@ -118,3 +118,19 @@ imdisp(C2,'C found by Gradient Descent',1);
 reconst = H*reshape(C2,Nx*Nt,1); 
 reconst = reshape(reconst,Nt,Nx);
 imagesc(reconst)
+
+%%
+
+figure;
+subplot(221); imagesc(reshape(measurement,[11,10]));
+axis image;title('Measurements / naive approach');colorbar;caxis([0,max(df0(:))]);
+
+subplot(222); imagesc(df0(:,1:11:end));axis image;
+title('GT at integer time');colorbar;caxis([0,max(df0(:))]);
+
+subplot(223); imagesc(C2');axis image;
+title('Recovered coefficients / Recon (interpolant)');colorbar;caxis([0,max(df0(:))]);
+
+subplot(224); imagesc(df0(:,1:11:end) - C2');axis image;title('GT - Coef');
+colorbar;
+linkaxes(findall(gcf,'Type','Axes'),'xy');
