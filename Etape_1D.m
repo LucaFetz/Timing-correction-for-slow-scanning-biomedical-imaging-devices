@@ -107,7 +107,6 @@ title('C found by Gradient Descent');
 %% reconstruction
 reconst = H*reshape(C2,Nx*Nt,1); %should give back measurement
 reconst = reshape(reconst,Nt,Nx);
-<<<<<<< HEAD
 imagesc(reconst)
 
 %%
