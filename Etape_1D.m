@@ -118,7 +118,7 @@ subplot(222); imagesc(df0(:,1:11:end));axis image;title('GT at integer time');co
 subplot(223); imagesc(C2');axis image;
 title('Recovered coefficients / Recon (interpolant)');colorbar;
 subplot(224); imagesc(df0(:,1:11:end) - C2');axis image;title('GT - Coef');colorbar;
-=======
+
 figure, subplot(1,2,1),imagesc(reconst);
 subplot(1,2,2), imagesc(reshape(measurement,Nx,Nt));
 %%
@@ -170,4 +170,3 @@ for i=1:Frames
     title(i)
     pause(0.01)
 end
->>>>>>> 1d8fafa9e46b2fcd2e3a5086647c81664ab402af
