@@ -86,7 +86,7 @@ LS=CostL2([],measurement);  % Least-Sqaures data term
 F=LS*H2; %composition of cost and H
 
 
-lambda = 3e-2; %is it right to thune regulation term based on df-df0?
+lambda = 0*3e-2; %is it right to thune regulation term based on df-df0?
 R = CostL2(size(C(:))); %regulation term. should it be a Cost? plut�t size(C)
 F2 = F+lambda*R; %how to integrate the regulation term?
 %regarder evolcost pour voir nb iterations
@@ -94,7 +94,7 @@ F2 = F+lambda*R; %how to integrate the regulation term?
 GD=OptiGradDsct(F2); %GradientDescent
 GD.OutOp=OutputOpti(1,[],40); %prendre df0 avec un pas de 1 et pas dt
 GD.ItUpOut=2;           % call OutputOpti update every ItUpOut iterations
-GD.maxiter=200;         % max number of iterations
+GD.maxiter=500;         % max number of iterations
 GD.run(measurement); % run the algorithm (Note that gam is fixed automatically to 1/F.lip here since F.lip is defined and since we do not have setted gam) 
 
 C2 = reshape(GD.xopt,Nx,Nt)';
@@ -102,13 +102,14 @@ C2 = reshape(GD.xopt,Nx,Nt)';
 figure, imagesc(C2);
 title('C found by Gradient Descent');
 
-%
-
 %% reconstruction
-reconst = H*reshape(C2,Nx*Nt,1); %should give back measurement
-reconst = reshape(reconst,Nt,Nx);
-imagesc(reconst)
+reconst = H2*GD.xopt;%H*reshape(C2,Nx*Nt,1); %should give back measurement
+reconst = reshape(reconst,Nx,Nt);
 
+figure(8);
+subplot(131);imagesc(reconst);axis image;colorbar;
+subplot(1,3,2), imagesc(reshape(measurement,Nx,Nt));axis image;colorbar;
+subplot(133);imagesc(reconst - reshape(measurement,Nx,Nt));axis image;colorbar;
 %%
 
 figure;
@@ -170,3 +171,19 @@ for i=1:Frames
     title(i)
     pause(0.01)
 end
+%% Direct inversion (show numerical instability that occurs rapidly)
+lambda = 1e0;
+condition = cond(H  + lambda*eye(size(H)));
+C = (H  + lambda*eye(size(H)))\measurement;
+figure(9);clf
+imagesc(reshape(C,Nx,Nt));axis image;colorbar;
+F*C
+
+%% Alternative way to get the sampl
+
+ind = [1+mod(0:110-1,11)',(1:110)'];
+tmp = df0;
+for kk = 1:size(ind,1)
+tmp(ind(kk,1),ind(kk,2)) = inf;
+end
+figure,imagesc(tmp)
