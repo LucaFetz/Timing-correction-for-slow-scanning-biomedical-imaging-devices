@@ -4,13 +4,13 @@ clear all
 close all
 
 %% Ground truth simulation
-%continuous grounf truth f0
+%continuous ground truth f0
 % define centering and sigma of gaussians in space and time
 sigma_x = 2;
 centering_x = 5;
 sigma_t = 2;
 centering_t = 5;
-% define variable and functions
+% define ground truth function
 f0 = @(x,t) gaussmf(x, [sigma_x centering_x]).*gaussmf(t, [sigma_t centering_t]); %continuous ground truth f0(x,t)
 
 %Discrete ground truth df0
@@ -22,15 +22,17 @@ Nx = centering_x*2+1; %size in nb of pixels
 sampling_time = 1/(Nx);
 %sample continuous f0
 dx = (0:1:Nx-1)'; 
-%xImage = gaussmf(dx, [2 (Nx-1)/2])'; %1D image in x plane
-%xImageStacked = repmat(xImage,1,Frames); %stack of Frames xImages
 dt = (0:sampling_time:(Nx*Frames-1)*sampling_time)';
-%t_fluctuation = gaussmf(dt, [2 5]); % fluctuation of xImage over time
+
 df0 = f0(dx,repmat(dt',Nx,1)); %sampled f0. each column is the image in a certain timeframe
 df1 = repmat(df0,Nt,1); %sampled f0. In reality only the first Nx columns are needed. This is used to simplify measurement with diag(df1)
 df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - df2 !=0??
 %% measurement and usual approximation
 measurement = diag(df1); %each sample is taken from its timeframe. In usual approximation it is considered as image at time t=0
+snr = 25;
+noisy_measurement = awgn(measurement,snr,'measured');
+measurement = noisy_measurement; %comment/uncomment to apply noise
+
 figure
 plot(repmat(dx,Frames,1), [measurement reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,((1:Nx:Nx*Nt)+floor(Nt/2))),Nx*Nt,1)]);
 legend(' superposition of Measurements / usual approximation','Ground truth at t=integer','Ground truth at time t=integer+1/2')
@@ -108,15 +110,16 @@ figure, imagesc(C2);
 title('C found by Gradient Descent');
 
 %% reconstruction
-reconst = H2*GD.xopt;%H*reshape(C2,Nx*Nt,1); %should give back measurement
+reconst = H2*GD.xopt;%H*C2 properly shaped gives back measurement
 reconst = reshape(reconst,Nx,Nt);
 
-
-figure(8);
+%compares measurement and H*C
+figure;
 subplot(131);imagesc(reconst);axis image;colorbar;
 subplot(1,3,2), imagesc(reshape(measurement,Nx,Nt));axis image;colorbar;
 subplot(133);imagesc(reconst - reshape(measurement,Nx,Nt));axis image;colorbar;
-%%
+
+%% comparison of measurements, GT and recovered coefficients
 
 figure;
 subplot(221); imagesc(reshape(measurement,[Nx,Nt]));
@@ -126,9 +129,8 @@ subplot(223); imagesc(C2');axis image;
 title('Recovered coefficients / Recon (interpolant)');colorbar;
 subplot(224); imagesc(df0(:,1:Nx:end) - C2');axis image;title('GT - Coef');colorbar;
 
-figure, subplot(1,2,1),imagesc(reconst);
-subplot(1,2,2), imagesc(reshape(measurement,Nx,Nt));
-%%
+
+%% 
 
 figure;
 subplot(221); imagesc(reshape(measurement,[Nx,Nt]));
@@ -144,9 +146,10 @@ subplot(224); imagesc(df0(:,1:Nx:end) - C2');axis image;title('GT - Coef');
 colorbar;
 linkaxes(findall(gcf,'Type','Axes'),'xy');
 
-%% fonction interpolante
+%% interpolating function f
 f = @(x,t) sum(sum(C2.*h(x,t)));
 df = zeros(Nx,Nx*Nt);
+%samling f in df with double loop. maybe try to vectorize
 index = 0;
 for j = (0:sampling_time:(Nx*Frames-1)*sampling_time)
     index = index +1;
@@ -155,39 +158,26 @@ for j = (0:sampling_time:(Nx*Frames-1)*sampling_time)
     end
 end
 %df = f(dx,repmat(dt',Nx,1)); %sampled f0. each column is the image in a certain timeframe
+%comparison between sampled f and sampled GT
 figure, subplot(221),imagesc(df);
 subplot(222),imagesc(df0);
 subplot(223),imagesc(df-df0);
 
+%comparison between continuous f and GT
 figure, subplot(121),fsurf(f0,[0 Nx-1 0 Nt-1]);
 subplot(122),fsurf(f,[0 Nx-1 0 Nt-1]);
 
-figure
-plot(repmat(dx,Frames,1), [measurement reshape(df(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1)]);
-legend(' superposition of Measurements / usual approximation','Interpolated approximation at t=0','Ground truth at time t=0')
-mean_measurement = mean(reshape(measurement,Nx,Frames),2);
-figure
-plot(dx, [mean_measurement mean(df(:,1:Nx:Nt*Nx),2) mean(df0(:,(1:Nx:Nt*Nx)+floor(Nt/2)),2)]);
-legend(' Mean of Measurements / usual approximation','Mean of interpolated approximation at t=integer','Mean of Ground truth at t=integer')
-
-figure 
-for i=1:Frames
-    plot(dx, [measurement((i-1)*Nx+1:i*Nx) df0(:,i*Nx) df(:,i*Nx)]); %measurement of image i, ground truth at time i
-    legend(' Measurement / usual approximation','Ground truth','Interpolated approximation')
-    title(i)
-    pause(0.01)
-end
 %% Direct inversion (show numerical instability that occurs rapidly)
 lambda = 1e0;
 condition = cond(H  + lambda*eye(size(H)));
 C = (H  + lambda*eye(size(H)))\measurement;
-figure(9);clf
+figure;clf
 imagesc(reshape(C,Nx,Nt));axis image;colorbar;
 F*C
 
-%% Alternative way to get the sampl
+%% Alternative way to get the samples
 
-ind = [1+mod(0:110-1,11)',(1:110)'];
+ind = [1+mod(0:Nx*Nt-1,Nx)',(1:Nx*Nt)'];
 tmp = df0;
 for kk = 1:size(ind,1)
 tmp(ind(kk,1),ind(kk,2)) = inf;
