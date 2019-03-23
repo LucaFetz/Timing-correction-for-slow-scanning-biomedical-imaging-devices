@@ -5,20 +5,16 @@ close all
 
 %% Ground truth simulation
 %continuous grounf truth f0
-% define centering and sigma of gaussians in space and time
-sigma_x = 2;
-centering_x = 5;
-sigma_t = 2;
-centering_t = 5;
+% define size and time ranges
+%to do
 % define variable and functions
-f0 = @(x,t) gaussmf(x, [sigma_x centering_x]).*gaussmf(t, [sigma_t centering_t]); %continuous ground truth f0(x,t)
+f0 = @(x,t) gaussmf(x, [2 5]).*gaussmf(t, [2 5]); %continuous ground truth f0(x,t)
 
 %Discrete ground truth df0
-%define number of frames and size of image. Here adapted to gaussian
-%parameters.
-Frames = centering_t*2+1;
+%define number of frames and size of image
+Frames = 10;
 Nt = Frames;
-Nx = centering_x*2+1; %size in nb of pixels
+Nx = 11; %size in nb of pixels
 sampling_time = 1/(Nx);
 %sample continuous f0
 dx = (0:1:Nx-1)'; 
@@ -32,16 +28,16 @@ df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - 
 %% measurement and usual approximation
 measurement = diag(df1); %each sample is taken from its timeframe. In usual approximation it is considered as image at time t=0
 figure
-plot(repmat(dx,Frames,1), [measurement reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,((1:Nx:Nx*Nt)+floor(Nt/2))),Nx*Nt,1)]);
-legend(' superposition of Measurements / usual approximation','Ground truth at t=integer','Ground truth at time t=integer+1/2')
+plot(repmat(dx,Frames,1), [measurement reshape(df0(:,1:Nt:Nx*(Nt-1)),Nx*Nt,1) reshape(df0(:,(1:Nt:Nx*(Nt-1))+floor(Nt/2)),Nx*Nt,1)]);
+legend(' superposition of Measurements / usual approximation','Ground truth at t=0','Ground truth at time t=1/2')
 mean_measurement = mean(reshape(measurement,Nx,Frames),2);
 figure
-plot(dx, [mean_measurement mean(df0(:,1:Nx:Nt*Nx),2) mean(df0(:,(1:Nx:Nt*Nx)+floor(Nt/2)),2)]);
+plot(dx, [mean_measurement mean(df0(:,1:Nt:Nx*(Nt-1)),2) mean(df0(:,(1:Nt:Nx*(Nt-1))+floor(Nt/2)),2)]);
 legend(' Mean of Measurements / usual approximation','Mean of Ground truth at t=integer','Mean of Ground truth at time t=integer+1/2')
 
 figure 
 for i=1:Frames
-    plot(dx, [measurement((i-1)*Nx+1:i*Nx) df0(:,i*Nx)]); %measurement of image i, ground truth at time i
+    plot(dx, [measurement((i-1)*Nx+1:i*Nx) df0(:,(i-1)*Nt+1)]); %measurement of image i, ground truth at time i
     legend(' Measurement / usual approximation','Ground truth')
     title(i)
     pause(0.01)
@@ -52,9 +48,8 @@ end
 k = repmat(0:1:Nx-1,Nt,1);
 l = repmat((0:1:Nt-1)',1,Nx);
 %h rows are fixed in time and columns are fixed in space. represent result
-%of (cubic_)B_splines for a given pixel
-h = @(x,t) (cubic_B_spline(x-k).*cubic_B_spline(t-l));%takes scalar input and gives matrix output (h(x-0,t-0), h(x-1,t-0),..h(x-(Nx-1),t-(Nt-1))
-%h = @(x,t) (B_spline(x-k).*B_spline(t-l));%takes scalar input and gives matrix output (h(x-0,t-0), h(x-1,t-0),..h(x-(Nx-1),t-(Nt-1))
+%of B_splines for a given pixel
+h = @(x,t) (B_spline(x-k).*B_spline(t-l));%takes scalar input and gives matrix output (h(x-0,t-0), h(x-1,t-0),..h(x-(Nx-1),t-(Nt-1))
 
 H = zeros(Nx*Nt,Nx*Nt); % each row of H is h unfolded.
 index = 0;
@@ -70,13 +65,13 @@ for j = 0:1:Nt-1
 %h(1,1+sampling_time);h(2,1+2*sampling_time);...;h((Nx-1),(Nx-1)*sampling_time+(Nt-1))]
     end
 end
-
+y = diag(measurement); %
 
 %% check conditionement of H
 %visualize
 figure
 imagesc(H);
-condition = cond(H); %bad condition on peut amï¿½liorer avec H+lambda(eye)
+condition = cond(H); %bad condition
 %% coefficient optimization for B spline interpolation
 %naive inverse approach
 C = H\measurement; %inv(H)*measurement;
@@ -90,8 +85,8 @@ LS=CostL2([],measurement);  % Least-Sqaures data term
 F=LS*H2; %composition of cost and H
 
 
-lambda = 0;%3e-2; %is it right to thune regulation term based on df-df0?
-R = CostL2(size(C(:))); %regulation term. should it be a Cost? plutï¿½t size(C)
+lambda = 3e-2; %is it right to thune regulation term based on df-df0?
+R = CostL2(size(C(:))); %regulation term. should it be a Cost? plutôt size(C)
 F2 = F+lambda*R; %how to integrate the regulation term?
 %regarder evolcost pour voir nb iterations
 
@@ -101,6 +96,7 @@ GD.ItUpOut=2;           % call OutputOpti update every ItUpOut iterations
 GD.maxiter=200;         % max number of iterations
 GD.run(measurement); % run the algorithm (Note that gam is fixed automatically to 1/F.lip here since F.lip is defined and since we do not have setted gam) 
 
+
 C2 = reshape(GD.xopt,Nx,Nt)';
 %% Display
 figure, imagesc(C2);
@@ -109,21 +105,8 @@ title('C found by Gradient Descent');
 %
 
 %% reconstruction
-reconst = H2*GD.xopt;%reshape(C2,Nx*Nt,1); %should give back measurement
+reconst = H*reshape(C2,Nx*Nt,1); %should give back measurement
 reconst = reshape(reconst,Nt,Nx);
-figure
-imagesc(reconst)
-
-%%
-
-figure;
-subplot(221); imagesc(reshape(measurement,[Nx,Nt]));
-axis image;title('Measurements / naive approach');colorbar;
-subplot(222); imagesc(df0(:,1:Nx:end));axis image;title('GT at integer time');colorbar;
-subplot(223); imagesc(C2');axis image;
-title('Recovered coefficients / Recon (interpolant)');colorbar;
-subplot(224); imagesc(df0(:,1:Nx:end) - C2');axis image;title('GT - Coef');colorbar;
-
 figure, subplot(1,2,1),imagesc(reconst);
 subplot(1,2,2), imagesc(reshape(measurement,Nx,Nt));
 %%
@@ -157,20 +140,20 @@ figure, subplot(221),imagesc(df);
 subplot(222),imagesc(df0);
 subplot(223),imagesc(df-df0);
 
-figure, subplot(121),fsurf(f0,[0 Nx-1 0 Nt-1]);
-subplot(122),fsurf(f,[0 Nx-1 0 Nt-1]);
+figure, subplot(121),fsurf(f0,[0 Nx-1]);
+subplot(122),fsurf(f,[0 Nx-1]);
 
 figure
-plot(repmat(dx,Frames,1), [measurement reshape(df(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1)]);
+plot(repmat(dx,Frames,1), [measurement reshape(df(:,1:Nt:Nx*(Nt-1)),Nx*Nt,1) reshape(df0(:,1:Nt:Nx*(Nt-1)),Nx*Nt,1)]);
 legend(' superposition of Measurements / usual approximation','Interpolated approximation at t=0','Ground truth at time t=0')
 mean_measurement = mean(reshape(measurement,Nx,Frames),2);
 figure
-plot(dx, [mean_measurement mean(df(:,1:Nx:Nt*Nx),2) mean(df0(:,(1:Nx:Nt*Nx)+floor(Nt/2)),2)]);
+plot(dx, [mean_measurement mean(df(:,1:Nt:Nx*(Nt-1)),2) mean(df0(:,(1:Nt:Nx*(Nt-1))+floor(Nt/2)),2)]);
 legend(' Mean of Measurements / usual approximation','Mean of interpolated approximation at t=integer','Mean of Ground truth at t=integer')
 
 figure 
 for i=1:Frames
-    plot(dx, [measurement((i-1)*Nx+1:i*Nx) df0(:,i*Nx) df(:,i*Nx)]); %measurement of image i, ground truth at time i
+    plot(dx, [measurement((i-1)*Nx+1:i*Nx) df0(:,(i-1)*Nt+1) df(:,(i-1)*Nt+1)]); %measurement of image i, ground truth at time i
     legend(' Measurement / usual approximation','Ground truth','Interpolated approximation')
     title(i)
     pause(0.01)
