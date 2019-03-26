@@ -29,9 +29,9 @@ df1 = repmat(df0,Nt,1); %sampled f0. In reality only the first Nx columns are ne
 df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - df2 !=0??
 %% measurement and usual approximation
 measurement = diag(df1); %each sample is taken from its timeframe. In usual approximation it is considered as image at time t=0
-snr = 25;
+snr = 25; %signal to noise ratio
 noisy_measurement = awgn(measurement,snr,'measured');
-measurement = noisy_measurement; %comment/uncomment to apply noise
+%measurement = noisy_measurement; %comment/uncomment to apply noise
 
 figure
 plot(repmat(dx,Frames,1), [measurement reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,((1:Nx:Nx*Nt)+floor(Nt/2))),Nx*Nt,1)]);
@@ -178,8 +178,33 @@ F*C
 %% Alternative way to get the samples
 
 ind = [1+mod(0:Nx*Nt-1,Nx)',(1:Nx*Nt)'];
-tmp = df0;
+tmp_samples = df0;
 for kk = 1:size(ind,1)
-tmp(ind(kk,1),ind(kk,2)) = inf;
+tmp_samples(ind(kk,1),ind(kk,2)) = inf;
 end
-figure,imagesc(tmp)
+figure,imagesc(tmp_samples),colorbar;
+xticks(1:20:Nx*Nt);
+xticklabels(0:20:Nx*Nt-1), yticklabels(0:Nx-1);
+xlabel('Time [dt]'),ylabel('Space [px]');
+title('Location of samples on ground truth')
+
+tmp_samples = df0;
+tmp_samples(:,1:Nx:Nx*Nt) = inf;
+figure,imagesc(tmp_samples),colorbar;
+xticks(1:20:Nx*Nt);
+xticklabels(0:20:Nx*Nt-1), yticklabels(0:Nx-1);
+xlabel('Time [dt]'),ylabel('Space [px]');
+title('Samples on ground truth at time t')
+
+
+tmp_samples = zeros(size(df0));
+for i = 1:size(df0,1)
+        tmp_samples(i,1:(end-i+1)) = df0(i,i:end);
+end
+
+tmp_samples(:,1:Nx:Nx*Nt) = inf;
+figure,imagesc(tmp_samples),colorbar;
+xticks(1:20:Nx*Nt);
+xticklabels(0:20:Nx*Nt-1), yticklabels(0:Nx-1);
+xlabel('Time [dt]'),ylabel('Space [px]');
+title('Distorsion on ground truth due to approximation')
