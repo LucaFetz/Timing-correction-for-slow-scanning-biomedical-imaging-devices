@@ -46,8 +46,10 @@ df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - 
 measurement = diag(df1); %each sample is taken from its timeframe. In usual approximation it is considered as image at time t=0
 noisy_measurement = awgn(measurement,snr,'measured');
 if noise == 1
-    measurement = noisy_measurement;
     figure(50), plot(noisy_measurement),hold on, plot(measurement);
+    figure(51),subplot(121), surf(reshape(noisy_measurement,Nx,Nt)),subplot(122), surf(reshape(measurement,Nx,Nt));
+    measurement = noisy_measurement;
+    hold off
 end
 
 
