@@ -1,21 +1,21 @@
-% %% clear workspace and add library
-% clc
-% clear all
-% close all
-% path = genpath('GlobalBioIm-release');
-% addpath(path);
-% 
-% %% define parameters for the simulation
-% spline_order = 3; %1 or 3. any other number will result in cubic splines (order 3)
-% noise = 0; % 0 or 1
-% snr = 10; %signal to noise ratio
-% lambda = 0*3e-2; %thune regulation term. 0 for no regulation.
+%% clear workspace and add library
+clc
+clear all
+close all
+path = genpath('GlobalBioIm-release');
+addpath(path);
+
+%% define parameters for the simulation
+spline_order = 3; %1 or 3. any other number will result in cubic splines (order 3)
+noise = 0; % 0 or 1
+snr = 10; %signal to noise ratio
+lambda = 0*3e-2; %thune regulation term. 0 for no regulation.
 
 %% take parameters already in workspace
-spline_order = param.spline_order; %1 or 3. any other number will result in cubic splines (order 3)
-noise = param.noise; % 0 or 1
-snr = param.snr; %signal to noise ratio
-lambda = param.lambda; %thune regulation term. 0 for no regulation.
+% spline_order = param.spline_order; %1 or 3. any other number will result in cubic splines (order 3)
+% noise = param.noise; % 0 or 1
+% snr = param.snr; %signal to noise ratio
+% lambda = param.lambda; %thune regulation term. 0 for no regulation.
 
 %% Ground truth simulation
 %continuous ground truth f0
@@ -38,7 +38,7 @@ sampling_time = 1/(Nx);
 dx = (0:1:Nx-1)'; 
 dt = (0:sampling_time:(Nx*Frames-1)*sampling_time)';
 
-df0 = f0(dx,repmat(dt',Nx,1)); %sampled f0. each column is the image in a certain timeframe
+df0 = f0(repmat(dx,1,Nx*Nt),repmat(dt',Nx,1)); %sampled f0. each column is the image in a certain timeframe
 df1 = repmat(df0,Nt,1); %sampled f0. In reality only the first Nx columns are needed. This is used to simplify measurement with diag(df1)
 df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - df2 !=0??
 
@@ -192,20 +192,40 @@ subplot(223),imagesc(df-df0);
 %comparison between sampled f, GT (at integer times) and measures in 3D
 figure, subplot(231),surf(df0(:,1:Nx:Nx*Nt));zlim([0 max(max(df(:,1:Nx:Nx*Nt)))]);
 title('Sampled GT')
+xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
 subplot(232),surf(df(:,1:Nx:Nx*Nt));zlim([0 max(max(df(:,1:Nx:Nx*Nt)))]);
-title('Corrected measurements')
+title('Reconstruction')
+xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
 subplot(233),surf(reshape(measurement,Nx,Nt));zlim([0 max(max(df(:,1:Nx:Nx*Nt)))]);
 title('Measurements/Naive approach')
+xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
 subplot(235),surf(df0(:,1:Nx:Nx*Nt) - df(:,1:Nx:Nx*Nt));
-title('GT - Corrected measurements')
+title('GT - Reconstruction')
+xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
 subplot(236),surf(df0(:,1:Nx:Nx*Nt) - reshape(measurement,Nx,Nt));
 title('GT - Measurements/Naive approach')
+xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
+%SNR value
+tmpdf0 = df0(:,1:Nx:Nx*Nt);
+tmpdf = df(:,1:Nx:Nx*Nt);
+snr_reconstruction = 20*log10(norm(tmpdf0(:))/norm(tmpdf(:)-tmpdf0(:)));%= 20 log( ||f_0||_2 / ||f-f_0||_2
+snr_measurement = 20*log10(norm(tmpdf0(:))/norm(measurement-tmpdf0(:)));
 
 %comparison between continuous f and GT
 figure, subplot(211),fsurf(f0,[0 Nx-1 0 Nt-1]);
 title('continuous GT')
 subplot(212),fsurf(f,[0 Nx-1 0 Nt-1]);
 title('continuous f(x,t)')
+
+%%
+figure, subplot(121),surf(df0(:,1:Nx:Nx*Nt));zlim([0 max(max(df(:,1:Nx:Nx*Nt)))]);
+title('Sampled GT')
+xlabel('Time [frame]')
+ylabel('Space [px]')
+zlabel('Signal intensity')
+subplot(122),surf(reshape(measurement,Nx,Nt));zlim([0 max(max(df(:,1:Nx:Nx*Nt)))]);
+title('Measurements/Naive approach')
+xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
 
 
 %% Alternative way to get the samples
