@@ -40,7 +40,7 @@ dt = (0:sampling_time:(Nx*Frames-1)*sampling_time)';
 
 df0 = f0(dx,repmat(dt',Nx,1)); %sampled f0. each column is the image in a certain timeframe
 df1 = repmat(df0,Nt,1); %sampled f0. In reality only the first Nx columns are needed. This is used to simplify measurement with diag(df1)
-df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - df2 !=0??
+df2 = f0(dx,repmat(0:Nt-1,Nx,1)); % sampled f0 at integers.
 
 %% measurement and usual approximation. noise simulation.
 measurement = diag(df1); %each sample is taken from its timeframe. In usual approximation it is considered as image at time t=0
@@ -75,8 +75,8 @@ for j = 0:1:Nt-1
 %h(1,1+sampling_time);h(2,1+2*sampling_time);...;h((Nx-1),(Nx-1)*sampling_time+(Nt-1))]
     end
 end
-
-
+%deactivated because sparse is not compatible with globalbioim formats
+%H = sparse(H);
 %% check conditionement of H
 %visualize
 condition = cond(H); %bad condition on peut am�liorer avec H+lambda(eye)

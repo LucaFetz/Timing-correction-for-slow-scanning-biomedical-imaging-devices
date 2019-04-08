@@ -1,6 +1,6 @@
-function [measurements, f0, df0] = create_2d_ground_truth(sigma_x,sigma_y,sigma_t,centering_x,centering_y, centering_t)
+function [measurements, f0, df0] = create_2d_ground_truth(sigma_x,sigma_y,sigma_t,centering_x,centering_y, centering_t, noise, noise_snr)
 %function that creates 2D+time ground truth(GT) as a 2D gaussian in space and a
-%gaussian in time
+%gaussian in time. Takes samples from GT and adds noise if needed.
 %input: sigma and centering to define the gaussians
 %output:measurements[(Nx*Ny*Nt)], continuous ground truth f0(x,y,t), discrete ground truth df0[Nx*Ny*(Nx*Ny*Nt)]
 
@@ -37,7 +37,12 @@ df0 = f0(repmat(dx,[1,Ny,length(dt)]),repmat(dy',[Nx,1,length(dt)]),repmat(dt,[N
 %-------
 measurements = zeros(1,N*Nt);
 for i = 1:N*Nt
-    measurements(i) = f0(mod(floor(i/Nx),Nx),mod(i,Ny)-1,dt(i));
+    measurements(i) = f0(mod(floor((i-1)/Ny),Nx),mod(i-1,Ny),dt(i));
+end
+
+%add white gaussian noise if needed
+if noise == 1
+    measurements = awgn(measurements,noise_snr,'measured');
 end
 
 end

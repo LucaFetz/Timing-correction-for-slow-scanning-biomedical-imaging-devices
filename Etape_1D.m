@@ -22,7 +22,7 @@ lambda = 0*3e-2; %thune regulation term. 0 for no regulation.
 % define centering and sigma of gaussians in space and time
 sigma_x = 2;
 centering_x = 5;
-sigma_t = 2;
+sigma_t = 5;
 centering_t = 5;
 % define ground truth function
 f0 = @(x,t) gaussmf(x, [sigma_x centering_x]).*gaussmf(t, [sigma_t centering_t]); %continuous ground truth f0(x,t)
@@ -40,7 +40,7 @@ dt = (0:sampling_time:(Nx*Frames-1)*sampling_time)';
 
 df0 = f0(repmat(dx,1,Nx*Nt),repmat(dt',Nx,1)); %sampled f0. each column is the image in a certain timeframe
 df1 = repmat(df0,Nt,1); %sampled f0. In reality only the first Nx columns are needed. This is used to simplify measurement with diag(df1)
-df2 = f0(dx,repmat(1:Nt,Nx,1)); % sampled f0 at integers. why df0(:,1:Nx:end) - df2 !=0??
+df2 = f0(repmat(dx,1,Nx),repmat(0:Nt-1,Nx,1)); % sampled f0 at integers.
 
 %% measurement and usual approximation. noise simulation.
 measurement = diag(df1); %each sample is taken from its timeframe. In usual approximation it is considered as image at time t=0
@@ -51,15 +51,15 @@ if noise == 1
     measurement = noisy_measurement;
     hold off
 end
-
-
-figure
-plot(repmat(dx,Frames,1), [measurement reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,((1:Nx:Nx*Nt)+floor(Nt/2))),Nx*Nt,1)]);
-legend(' superposition of Measurements / usual approximation','Ground truth at t=integer','Ground truth at time t=integer+1/2')
-mean_measurement = mean(reshape(measurement,Nx,Frames),2);
-figure
-plot(dx, [mean_measurement mean(df0(:,1:Nx:Nt*Nx),2) mean(df0(:,(1:Nx:Nt*Nx)+floor(Nt/2)),2)]);
-legend(' Mean of Measurements / usual approximation','Mean of Ground truth at t=integer','Mean of Ground truth at time t=integer+1/2')
+% 
+% 
+% figure
+% plot(repmat(dx,Frames,1), [measurement reshape(df0(:,1:Nx:Nt*Nx),Nx*Nt,1) reshape(df0(:,((1:Nx:Nx*Nt)+floor(Nt/2))),Nx*Nt,1)]);
+% legend(' superposition of Measurements / usual approximation','Ground truth at t=integer','Ground truth at time t=integer+1/2')
+% mean_measurement = mean(reshape(measurement,Nx,Frames),2);
+% figure
+% plot(dx, [mean_measurement mean(df0(:,1:Nx:Nt*Nx),2) mean(df0(:,(1:Nx:Nt*Nx)+floor(Nt/2)),2)]);
+% legend(' Mean of Measurements / usual approximation','Mean of Ground truth at t=integer','Mean of Ground truth at time t=integer+1/2')
 
 %slice animation
 % figure 
@@ -90,7 +90,7 @@ for j = 0:1:Nt-1
         %after the reshape we have h(x,t)=[h(x-0,t-0) h(x-1,t-0) h(x-2,t-0)...
         %.. h(x-(Nx-1),t-0) h(x-0,t-1) h(x-1,t-1) ... h(x-(Nx-1),t-(Nt-1))]
         index = index+1;
-       H(index,:) = reshape(h(i,j+i*sampling_time)',1,Nx*Nt); %is it better to have the double diag? can be done keeping the columns intact (juste remove')
+       H(index,:) = reshape(h(i,j+i*sampling_time)',1,Nx*Nt); 
 %rows of H are:
 %H=[h(0,0);h(1,sampling_time);h(2,2*sampling_time);...;h((Nx-1),(Nx-1)*sampling_times);
 %h(1,1+sampling_time);h(2,1+2*sampling_time);...;h((Nx-1),(Nx-1)*sampling_time+(Nt-1))]
@@ -103,7 +103,7 @@ end
 figure
 imagesc(H);
 title('Forward model H')
-condition = cond(H); %bad condition on peut amï¿½liorer avec H+lambda(eye)
+condition = cond(H); %bad condition on peut améliorer avec H+lambda(eye)
 
 %% coefficient optimization for B spline interpolation
 %naive inverse approach
