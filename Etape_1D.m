@@ -2,7 +2,7 @@
 clc
 clear all
 close all
-path = genpath('GlobalBioIm-release');
+path = genpath('GlobalBioIm');
 addpath(path);
 
 %% define parameters for the simulation
@@ -96,8 +96,8 @@ for j = 0:1:Nt-1
 %h(1,1+sampling_time);h(2,1+2*sampling_time);...;h((Nx-1),(Nx-1)*sampling_time+(Nt-1))]
     end
 end
-
-
+%since H is full of zeros, store it correctly
+H = sparse(H);
 %% check conditionement of H
 %visualize
 figure
@@ -173,7 +173,7 @@ linkaxes(findall(gcf,'Type','Axes'),'xy');
 
 f = @(x,t) sum(sum(C2.*h(x,t)));
 df = zeros(Nx,Nx*Nt);
-%samling f in df with double loop. maybe try to vectorize
+%sampling f in df with double loop. maybe try to vectorize
 index = 0;
 for j = (0:sampling_time:(Nx*Frames-1)*sampling_time)
     index = index +1;

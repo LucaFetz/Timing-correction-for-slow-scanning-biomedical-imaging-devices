@@ -1,4 +1,4 @@
-function H = create_2d_forward_model(Nx,Ny,Nt,spline_order)
+function [H, h] = create_2d_forward_model(Nx,Ny,Nt,spline_order)
 %Function that returns forward model for sampling 2d images
 %input: Nx,Ny,Nt size of images. spline_order, 1 or 3
 %Output: forward model H
@@ -36,4 +36,6 @@ for k = 0:1:Nt-1
         end
     end
 end
+%since H is full of zeros, store it correctly
+H = sparse(H);
 end

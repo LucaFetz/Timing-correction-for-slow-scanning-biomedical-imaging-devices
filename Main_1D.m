@@ -2,7 +2,7 @@
 clear param result
 clc
 close all
-path = genpath('GlobalBioIm-release');
+path = genpath('GlobalBioIm');
 addpath(path);
 
 %% define parameters

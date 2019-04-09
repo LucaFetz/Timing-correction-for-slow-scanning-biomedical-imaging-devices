@@ -75,8 +75,8 @@ for j = 0:1:Nt-1
 %h(1,1+sampling_time);h(2,1+2*sampling_time);...;h((Nx-1),(Nx-1)*sampling_time+(Nt-1))]
     end
 end
-%deactivated because sparse is not compatible with globalbioim formats
-%H = sparse(H);
+%since H is full of zeros, store it correctly
+H = sparse(H);
 %% check conditionement of H
 %visualize
 condition = cond(H); %bad condition on peut am�liorer avec H+lambda(eye)
