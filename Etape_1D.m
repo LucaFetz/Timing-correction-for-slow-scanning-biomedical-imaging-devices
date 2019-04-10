@@ -123,7 +123,7 @@ F2 = F+lambda*R; %how to integrate the regulation term?
 GD=OptiGradDsct(F2); %GradientDescent
 GD.OutOp=OutputOpti(1,[],40); %prendre df0 avec un pas de 1 et pas dt
 GD.ItUpOut=2;           % call OutputOpti update every ItUpOut iterations
-GD.maxiter=500;         % max number of iterations
+GD.maxiter=5000;         % max number of iterations
 GD.run(measurement); % run the algorithm (Note that gam is fixed automatically to 1/F.lip here since F.lip is defined and since we do not have setted gam) 
 
 C2 = reshape(GD.xopt,Nx,Nt)';
