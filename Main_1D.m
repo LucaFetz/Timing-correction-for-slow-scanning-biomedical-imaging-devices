@@ -88,3 +88,4 @@ xlabel('Time [frame]'), ylabel('Space [px]'), zlabel('Signal intensity');
 tmpdf0 = df0(:,1:Nx:Nx*Nt);
 tmpdf = df(:,1:Nx:Nx*Nt);
 snr_reconstruction_noReg = 20*log10(norm(tmpdf0(:))/norm(tmpdf(:)-tmpdf0(:)));
+

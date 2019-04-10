@@ -7,9 +7,9 @@ addpath(path);
 
 %% define parameters
 param.spline_order = 3; %1 or 3. any other number will result in cubic splines (order 3)
-param.noise = 0; % 0 or 1
+param.noise = 1; % 0 or 1
 param.noise_snr = 10; %signal to noise ratio
-param.lambda = 0*3e-2; %thune regulation term. 0 for no regulation.
+param.lambda = 2*3e-2; %thune regulation term. 0 for no regulation.
 
 %% Create 2D ground truth
 %define GT parameters
@@ -68,3 +68,53 @@ for i = 1:Nt
 end
 
 %% assess reconstruction quality and visualize results
+result.snr_measurements = snr(GT,GT-measurements_matrix);
+result.snr_reconstruction = snr(GT,GT-reconstructed_frames);
+
+figure('Units','normalized','Position',[0 0 1 1]);
+
+for i = 1:Nt
+
+    str = sprintf('Time = %d', i)
+    suptitle(str)
+    
+    subplot(231),imagesc(GT(:,:,i));colorbar;caxis([0 1]);
+    title('GT')
+    
+    subplot(232),imagesc(measurements_matrix(:,:,i));colorbar;caxis([0 1]);
+    title('measurements/naive approach')
+    
+    subplot(233),imagesc(reconstructed_frames(:,:,i));colorbar;caxis([0 1]);
+    title('reconstructed frames');
+    
+    subplot(235),imagesc(GT(:,:,i) - measurements_matrix(:,:,i));colorbar;caxis([0 max(max(max(GT(:,:,:) - measurements_matrix(:,:,:))))]);
+    title('GT - measurements');
+    
+    subplot(236),imagesc(GT(:,:,i) - reconstructed_frames(:,:,i));colorbar;caxis([0 max(max(max(GT(:,:,:) - reconstructed_frames(:,:,:))))]);
+    title('GT - reconstructed frames');
+    
+    pause(0.2);
+end
+
+for i = 1:Nt
+
+    str = sprintf('Time = %d', i)
+    suptitle(str)
+    
+    subplot(231),surf(GT(:,:,i));colorbar;caxis([0 1]);zlim([0 1]);
+    title('GT')
+    
+    subplot(232),surf(measurements_matrix(:,:,i));colorbar;caxis([0 1]);zlim([0 1]);
+    title('measurements/naive approach')
+    
+    subplot(233),surf(reconstructed_frames(:,:,i));colorbar;caxis([0 1]);zlim([0 1]);
+    title('reconstructed frames');
+    
+    subplot(235),surf(GT(:,:,i) - measurements_matrix(:,:,i));colorbar;caxis([min(min(min(GT(:,:,:) - measurements_matrix(:,:,:)))) max(max(max(GT(:,:,:) - measurements_matrix(:,:,:))))]);zlim([min(min(min(GT(:,:,:) - measurements_matrix(:,:,:)))) max(max(max(GT(:,:,:) - measurements_matrix(:,:,:))))]);
+    title('GT - measurements');
+    
+    subplot(236),surf(GT(:,:,i) - reconstructed_frames(:,:,i));colorbar;caxis([min(min(min(GT(:,:,:) - reconstructed_frames(:,:,:)))) max(max(max(GT(:,:,:) - reconstructed_frames(:,:,:))))]);zlim([min(min(min(GT(:,:,:) - reconstructed_frames(:,:,:)))) max(max(max(GT(:,:,:) - reconstructed_frames(:,:,:))))]);
+    title('GT - reconstructed frames');
+    
+    pause(0.2);
+end
