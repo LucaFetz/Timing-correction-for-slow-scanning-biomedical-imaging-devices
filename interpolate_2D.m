@@ -2,7 +2,7 @@ function [f,reconstructed_frames] = interpolate_2D(h, C)
 %create an interpolating function f(x,y,t) from B splines and already
 %optimized coefficients.
 %input: continuous forward model h, coefficients C
-%output: interpolating function f, sampled f: df
+%output: interpolating function f, sampled f: reconstructed frames
 
 %interpolating function
 f = @(x,y,t) sum(sum(sum(C.*h(x,y,t))));
@@ -19,5 +19,6 @@ for i = 1:Nx*Ny*Nt
     reconstructed_frames(i) = f(mod(floor((i-1)/Ny),Nx),mod(i-1,Ny),floor(dt(i))); %sample like measurements but at integer times
 end
 %reshape the frames
+%since the reshape is column wise we reshape as [Ny,Nx,Nt] and then permute
 reconstructed_frames = permute(reshape(reconstructed_frames,[Ny,Nx,Nt]),[2 1 3]);
 end

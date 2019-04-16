@@ -9,10 +9,13 @@ addpath(path);
 param.spline_order = 3; %1 or 3. any other number will result in cubic splines (order 3)
 param.noise = 0; % 0 or 1
 param.noise_snr = 10; %signal to noise ratio
-param.lambda = 2*3e-2; %thune regulation term. 0 for no regulation.
+param.lambda =0;% 2*3e-2; %thune regulation term. 0 for no regulation.
 param.opti_type = 'GradDsct'; %choose optimization algorithm
 param.regul_type = 'L2'; %choose regulation type
-param.plot_flag = 0; %vilsualize steps of algo
+param.plot_flag = 1; %vilsualize steps of algo
+
+param.samples_coordinates_x = "backnforth"; %coordinates for x sampling
+param.samples_coordinates_y = "backnforth"; %coordinates for y sampling
 
 %% run ETAPE_2D
 result = Etape_2D(param);
@@ -20,7 +23,7 @@ result = Etape_2D(param);
 %% assess noise and lambda effects
 repeats = 10; %number of repeats to mean noise effects and have a more robust estimation
 param.noise = 1;
-lambda_list = logspace(-4,0,30);
+lambda_list = logspace(-4,0,20);
 snr_list = 1:1:50;
 snr_measurements = zeros(length(lambda_list), length(snr_list));
 snr_reconstruction = zeros(length(lambda_list), length(snr_list));
@@ -32,7 +35,7 @@ for m = 1:length(lambda_list)
         for o = 1:repeats
             result(m,n) = Etape_2D(param);
             snr_measurements(m,n) = snr_measurements(m,n) + result(m,n).snr_measurements/repeats;
-            snr_reconstruction(m,n) = snr_reconstruction(m,n) + result(m,n).snr_reconstruction/10;
+            snr_reconstruction(m,n) = snr_reconstruction(m,n) + result(m,n).snr_reconstruction/repeats;
             fprintf('test %d of %d. \n', (m-1)*length(snr_list)+n, length(lambda_list)*length(snr_list))
         end
     end
