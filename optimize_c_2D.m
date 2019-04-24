@@ -12,11 +12,11 @@ H.memoizeOpts.applyHtH=1;
 LS=CostL2([],measurements);  % Least-Sqaures data term
 F=LS*H; %composition of cost and H
 switch regul_type
-    case 'L2'
+    case "L2"
         R = CostL2(size(H,1)); %regulation term. size(H,1) = size(C)
-    case 'L1'
+    case "L1"
         R = CostL1(size(H,1));
-    case 'L21'
+    case "TV"
         R = CostTV(size(H,1));
 end
 
@@ -29,7 +29,7 @@ F2.doPrecomputation=1;
 %regarder evolcost pour voir nb iterations
 
 switch opti_type
-    case 'GradDsct'
+    case "GradDsct"
         GD=OptiGradDsct(F2); %GradientDescent
         GD.OutOp=OutputOpti(1,[],40); %prendre df0 avec un pas de 1 et pas dt
         GD.ItUpOut=2;           % call OutputOpti update every ItUpOut iterations
@@ -37,8 +37,27 @@ switch opti_type
         GD.run(measurements); % run the algorithm (Note that gam is fixed automatically to 1/F.lip here since F.lip is defined and since we do not have setted gam) 
 
         C = GD.xopt;
-    case 'ADMM'
+    case "ADMM"
         
+    case "ConjGrad"
+        A = H.makeHtH();
+        b = H'*measurements;
+        CG=OptiConjGrad(A,b);  
+        CG.OutOp=OutputOptiConjGrad(1,dot(measurements(:),measurements(:)),[],40);  
+        CG.ItUpOut=2; 
+        CG.maxiter=500;                             % max number of iterations
+        CG.run(measurements);                                  % run the algorithm 
+
+        C = CG.xopt;
+        
+    case "VMLBM"
+        VMLMB=OptiVMLMB(F,[],[]);  
+        VMLMB.OutOp=OutputOptiSNR(1,[],40);
+        VMLMB.ItUpOut=2; 
+        VMLMB.maxiter=500;                             % max number of iterations
+        VMLMB.m=2;                                     % number of memorized step in hessian approximation (one step is enough for quadratic function)
+        VMLMB.run(measurements);                                  % run the algorithm 
+
 end
 
 end

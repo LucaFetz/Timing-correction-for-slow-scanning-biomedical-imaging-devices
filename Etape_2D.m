@@ -9,7 +9,7 @@ param.GT.centering_y = 4;
 param.GT.sigma_t = 2;
 param.GT.centering_t = 5;
 %create GT ans retrieve samples with their coordinates in x, y and time
-[measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coordinates_y] = create_2d_ground_truth(param.samples_coordinates_x,param.samples_coordinates_y,param.GT.sigma_x,param.GT.sigma_y,param.GT.sigma_t,param.GT.centering_x,param.GT.centering_y, param.GT.centering_t, param.noise, param.noise_snr);
+[measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coordinates_y] = create_2d_ground_truth(param.samples_coordinates_x,param.samples_coordinates_y,param.GT.sigma_x,param.GT.sigma_y,param.GT.sigma_t,param.GT.centering_x,param.GT.centering_y, param.GT.centering_t, param.noise, param.noise_snr, param.GTconfig);
 samples_coordinates_f = repelem(0:Nt-1,1,Nx*Ny); % coordinates in frame of each sample
 %% plot GT with animation in time
 if(param.plot_flag)
@@ -90,18 +90,19 @@ end
 if(param.plot_flag)
     figure('Units','normalized','Position',[0 0 1 1]);
 
+    maximum_GT_value = max(max(max(GT)));
     for i = 1:Nt
 
         %str = sprintf('Time = %d', i)
         %suptitle(str)
 
-        subplot(231),imagesc(GT(:,:,i));colorbar;caxis([0 1]);
+        subplot(231),imagesc(GT(:,:,i));colorbar;caxis([0 maximum_GT_value]);
         title('GT')
 
-        subplot(232),imagesc(measurements_matrix(:,:,i));colorbar;caxis([0 1]);
+        subplot(232),imagesc(measurements_matrix(:,:,i));colorbar;caxis([0 maximum_GT_value]);
         title('measurements/naive approach')
 
-        subplot(233),imagesc(result.reconstructed_frames(:,:,i));colorbar;caxis([0 1]);
+        subplot(233),imagesc(result.reconstructed_frames(:,:,i));colorbar;caxis([0 maximum_GT_value]);
         title('reconstructed frames');
 
         subplot(235),imagesc(GT(:,:,i) - measurements_matrix(:,:,i));colorbar;caxis([0 max(max(max(GT(:,:,:) - measurements_matrix(:,:,:))))]);
@@ -117,14 +118,14 @@ if(param.plot_flag)
 
         %str = sprintf('Time = %d', i)
         %suptitle(str)
-
-        subplot(231),surf(GT(:,:,i));colorbar;caxis([0 1]);zlim([0 1]);
+        
+        subplot(231),surf(GT(:,:,i));colorbar;caxis([0 1]);zlim([0 maximum_GT_value]);
         title('GT')
 
-        subplot(232),surf(measurements_matrix(:,:,i));colorbar;caxis([0 1]);zlim([0 1]);
+        subplot(232),surf(measurements_matrix(:,:,i));colorbar;caxis([0 1]);zlim([0 maximum_GT_value]);
         title('measurements/naive approach')
 
-        subplot(233),surf(result.reconstructed_frames(:,:,i));colorbar;caxis([0 1]);zlim([0 1]);
+        subplot(233),surf(result.reconstructed_frames(:,:,i));colorbar;caxis([0 1]);zlim([0 maximum_GT_value]);
         title('reconstructed frames');
 
         subplot(235),surf(GT(:,:,i) - measurements_matrix(:,:,i));colorbar;caxis([min(min(min(GT(:,:,:) - measurements_matrix(:,:,:)))) max(max(max(GT(:,:,:) - measurements_matrix(:,:,:))))]);zlim([min(min(min(GT(:,:,:) - measurements_matrix(:,:,:)))) max(max(max(GT(:,:,:) - measurements_matrix(:,:,:))))]);
