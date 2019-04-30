@@ -13,11 +13,13 @@ LS=CostL2([],measurements);  % Least-Sqaures data term
 F=LS*H; %composition of cost and H
 switch regul_type
     case "L2"
-        R = CostL2(size(H,1)); %regulation term. size(H,1) = size(C)
+        R = CostL2(H.sizein); %regulation term. size(H,1) = size(C)
     case "L1"
-        R = CostL1(size(H,1));
+        R = CostL1(H.sizein);
     case "TV"
-        R = CostTV(size(H,1));
+        R = CostTV(H.sizein);
+    case "L12"
+        R=CostMixNorm21([H.sizein,1],3);
 end
 
 F2 = F+lambda*R; 
@@ -37,10 +39,14 @@ switch opti_type
         GD.run(measurements); % run the algorithm (Note that gam is fixed automatically to 1/F.lip here since F.lip is defined and since we do not have setted gam) 
 
         C = GD.xopt;
-    case "ADMM"
         
     case "ConjGrad"
-        A = H.makeHtH();
+        %Note: ConjGrad is used only with L2 cost
+        if(lambda ~= 0)
+            A = H.makeHtH() + lambda * LinOPIdentity(H.sizein);
+        else
+            A = H.makeHtH();
+        end
         b = H'*measurements;
         CG=OptiConjGrad(A,b);  
         CG.OutOp=OutputOptiConjGrad(1,dot(measurements(:),measurements(:)),[],40);  
@@ -50,14 +56,30 @@ switch opti_type
 
         C = CG.xopt;
         
-    case "VMLBM"
-        VMLMB=OptiVMLMB(F,[],[]);  
-        VMLMB.OutOp=OutputOptiSNR(1,[],40);
-        VMLMB.ItUpOut=2; 
-        VMLMB.maxiter=500;                             % max number of iterations
-        VMLMB.m=2;                                     % number of memorized step in hessian approximation (one step is enough for quadratic function)
-        VMLMB.run(measurements);                                  % run the algorithm 
+    case "ADMM"
+        Fn={lambda*R};
+        Hn = {H};
+        rho_n=[1e-1];
+        ADMM=OptiADMM(F,Fn,Hn,rho_n);
+        %ADMM.OutOp=OutputOptiSNR(1,[],10);
+        % STOP when the sum successives C = F*x + Fn{1}*Hn{1}*x is lower
+        % than 1e-4 or when the distance between two successive step is lower than 1e-4
+        ADMM.CvOp=TestCvgCombine(TestCvgCostRelative(1e-4), 'StepRelative',1e-4);   
+        ADMM.ItUpOut=1;             % call OutputOpti update every ItUpOut iterations
+        ADMM.maxiter=200;           % max number of iterations
+        ADMM.run(zeros(size(measurements)));   % run the algorithm 
+        
+        C = ADMM.xopt;
+    case "FBS"
+        FBS=OptiFBS(F,lambda*R);
+        %FBS.OutOp=OutputOptiSNR(1,[],10);
+        FBS.CvOp=TestCvgCombine(TestCvgCostRelative(1e-4), 'StepRelative',1e-4);  
+        FBS.ItUpOut=1;          % call OutputOpti update every ItUpOut iterations
+        FBS.fista=true;         % activate fista
+        FBS.maxiter=200;        % max number of iterations
+        FBS.run(zeros(size(measurements)));% run the algorithm (Note that gam is fixed automatically to 1/F.lip here since F.lip is defined and since we do not have setted gam) 
 
+        C = FBS.xopt;
 end
 
 end

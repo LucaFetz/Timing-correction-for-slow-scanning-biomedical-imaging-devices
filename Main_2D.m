@@ -9,10 +9,10 @@ addpath(path);
 param.spline_order = 3; %1 or 3. any other number will result in cubic splines (order 3)
 param.noise = 0; % 0 or 1
 param.noise_snr = 10; %signal to noise ratio
-param.lambda =0;% 2*3e-2; %thune regulation term. 0 for no regulation.
-param.opti_type = "GradDsct"; %choose optimization algorithm
+param.lambda =2*3e-3;% 2*3e-2; %thune regulation term. 0 for no regulation.
+param.opti_type = "ADMM"; %choose optimization algorithm
 param.regul_type = "L2"; %choose regulation type
-param.plot_flag = 0; %vilsualize steps of algo
+param.plot_flag = 1; %vilsualize steps of algo
 param.GTconfig = 2; %different ground truths
 
 param.samples_coordinates_x = "backnforth"; %coordinates for x sampling
@@ -24,7 +24,7 @@ result = Etape_2D(param);
 %% assess noise and lambda effects
 repeats = 1; %number of repeats to mean noise effects and have a more robust estimation
 param.noise = 1;
-lambda_list = logspace(-4,0,20);
+lambda_list = logspace(-5,1,20);
 snr_list = 1:1:10;
 snr_measurements = zeros(length(lambda_list), length(snr_list));
 snr_reconstruction = zeros(length(lambda_list), length(snr_list));
