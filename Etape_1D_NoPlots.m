@@ -22,7 +22,7 @@ lambda = param.lambda; %thune regulation term. 0 for no regulation.
 % define centering and sigma of gaussians in space and time
 sigma_x = 2;
 centering_x = 5;
-sigma_t = 2;
+sigma_t = 5;
 centering_t = 5;
 % define ground truth function
 f0 = @(x,t) gaussmf(x, [sigma_x centering_x]).*gaussmf(t, [sigma_t centering_t]); %continuous ground truth f0(x,t)

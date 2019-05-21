@@ -18,10 +18,10 @@ Etape_1D_NoPlots;
 param.spline_order = 3;
 param.noise = 1;
 %faire plusieurs fois l'expérience
-for m = 1:100
+for m = 1:10
     param.lambda = m*3e-3; %utiliser logspace pour chercher lambda optimal
     for n = 1:10
-        param.snr = 5 + n;
+        param.snr = 500 + n;
         Etape_1D_NoPlots;
         close all
         %result will have different Reg in each row and different noise in

@@ -1,4 +1,4 @@
-function [measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coordinates_y] = create_2d_ground_truth(samples_coordinates_x, samples_coordinates_y, sigma_x,sigma_y,sigma_t,centering_x,centering_y, centering_t, noise, noise_snr, config)
+function [measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coordinates_y] = create_2d_ground_truth(samples_coordinates_x, samples_coordinates_y, sigma_x,sigma_y,sigma_t,centering_x,centering_y, centering_t, noise, noise_snr, config, speed)
 %function that creates 2D+time ground truth(GT) as a 2D gaussian in space and a
 %gaussian in time. Takes samples from GT and adds noise if needed.
 %input: vector defining position of samples. Can be 'classic' or
@@ -9,10 +9,20 @@ function [measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coord
 %% define ground truth function
 % continuous GT
 switch config
-    case 1
+    case 1 %2D temporal gaussian
         f0 = @(x,y,t) gaussmf(x, [sigma_x centering_x]).*gaussmf(y, [sigma_y centering_y]).*gaussmf(t, [sigma_t centering_t]); %continuous ground truth f0(x,t)
-    case 2
+    case 2 %multiple 2D temporal gaussian
         f0 = @(x,y,t) gaussmf(x, [sigma_x/2 centering_x/2]).*gaussmf(y, [sigma_y/2 centering_y/2]).*gaussmf(t, [sigma_t/2 centering_t/2]) + gaussmf(x, [sigma_x centering_x]).*gaussmf(y, [sigma_y*1.5 centering_y*1.5]).*gaussmf(t, [sigma_t/2 centering_t*1.5]) + gaussmf(x, [sigma_x centering_x]).*gaussmf(y, [sigma_y centering_y]).*gaussmf(t, [sigma_t centering_t]); %continuous ground truth f0(x,t)
+    case 3 %moving gaussian
+        r = min(centering_x,centering_y)*0.66; 
+        theta = speed/(r);
+        f0 = @(x,y,t) gaussmf(x, [sigma_x/2 r * cos(theta*t) + centering_x]).*gaussmf(y, [sigma_y/2 r * sin(theta*t) + centering_y]);
+    case 4 %"beating" gaussian
+        a1 = 0.5 * sigma_x;
+        sigma_x_beating = @(t) a1*sin(speed*t) + sigma_x;
+        a2 = 0.5 * sigma_y;
+        sigma_y_beating = @(t) a2*sin(speed*t) + sigma_y;
+        f0 = @(x,y,t) gaussmf(x, [sigma_x_beating(t) centering_x]).*gaussmf(y, [sigma_y_beating(t) centering_y]);
 end
 %Discrete GT df0
 %define number of frames and size of image. Here adapted to gaussian

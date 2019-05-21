@@ -3,13 +3,14 @@ function result = Etape_2D(param)
 %% Create 2D ground truth
 %define GT parameters
 param.GT.sigma_x = 2;
-param.GT.centering_x = 3;
+param.GT.centering_x = 12;
 param.GT.sigma_y = 2;
-param.GT.centering_y = 4;
+param.GT.centering_y = 13;
 param.GT.sigma_t = 2;
-param.GT.centering_t = 5;
+param.GT.centering_t = 14;
+
 %create GT ans retrieve samples with their coordinates in x, y and time
-[measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coordinates_y] = create_2d_ground_truth(param.samples_coordinates_x,param.samples_coordinates_y,param.GT.sigma_x,param.GT.sigma_y,param.GT.sigma_t,param.GT.centering_x,param.GT.centering_y, param.GT.centering_t, param.noise, param.noise_snr, param.GTconfig);
+[measurements, f0, GT, Nx, Ny, Nt, samples_coordinates_x, samples_coordinates_y] = create_2d_ground_truth(param.samples_coordinates_x,param.samples_coordinates_y,param.GT.sigma_x,param.GT.sigma_y,param.GT.sigma_t,param.GT.centering_x,param.GT.centering_y, param.GT.centering_t, param.noise, param.noise_snr, param.GTconfig, param.GT.speed);
 samples_coordinates_f = repelem(0:Nt-1,1,Nx*Ny); % coordinates in frame of each sample
 %% plot GT with animation in time
 if(param.plot_flag)
@@ -45,9 +46,9 @@ end
 [H, h] = create_2d_forward_model(Nx,Ny,Nt,param.spline_order, samples_coordinates_x, samples_coordinates_y);
 
 %% plot H
-if(param.plot_flag)
-    figure, imagesc(H);
-end
+% if(param.plot_flag)
+%     figure, imagesc(H);
+% end
 %% Find C with inverse problem
 C = optimize_c_2D(H, param.lambda, measurements',param.opti_type,param.regul_type);
 
@@ -111,7 +112,7 @@ if(param.plot_flag)
         subplot(236),imagesc(GT(:,:,i) - result.reconstructed_frames(:,:,i));colorbar;caxis([0 max(max(max(GT(:,:,:) - result.reconstructed_frames(:,:,:))))]);
         title('GT - reconstructed frames');
 
-        pause(0.2);
+        pause();
     end
 
     for i = 1:Nt
